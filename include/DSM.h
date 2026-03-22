@@ -9,6 +9,7 @@
 #include "DSMKeeper.h"
 #include "GlobalAddress.h"
 #include "LocalAllocator.h"
+#include "OnChip.h"
 #include "RdmaBuffer.h"
 
 class DSMKeeper;
@@ -81,35 +82,59 @@ public:
                          uint64_t *rdma_buffer, uint64_t mask = 63,
                          CoroContext *ctx = nullptr);
 
-  // for on-chip device memory
+  // Returns an OnChip handle bound to the calling thread's connection.
+  // Use this to perform RDMA operations on on-chip (device) memory.
+  OnChip get_onchip() { return OnChip(iCon, remoteInfo); }
+
+  // Convenience wrappers — delegate to get_onchip() for backward compatibility.
   void read_dm(char *buffer, GlobalAddress gaddr, size_t size,
-               bool signal = true, CoroContext *ctx = nullptr);
+               bool signal = true, CoroContext *ctx = nullptr) {
+    get_onchip().read(buffer, gaddr, size, signal, ctx);
+  }
   void read_dm_sync(char *buffer, GlobalAddress gaddr, size_t size,
-                    CoroContext *ctx = nullptr);
+                    CoroContext *ctx = nullptr) {
+    get_onchip().read_sync(buffer, gaddr, size, ctx);
+  }
 
   void write_dm(const char *buffer, GlobalAddress gaddr, size_t size,
-                bool signal = true, CoroContext *ctx = nullptr);
+                bool signal = true, CoroContext *ctx = nullptr) {
+    get_onchip().write(buffer, gaddr, size, signal, ctx);
+  }
   void write_dm_sync(const char *buffer, GlobalAddress gaddr, size_t size,
-                     CoroContext *ctx = nullptr);
+                     CoroContext *ctx = nullptr) {
+    get_onchip().write_sync(buffer, gaddr, size, ctx);
+  }
 
   void cas_dm(GlobalAddress gaddr, uint64_t equal, uint64_t val,
               uint64_t *rdma_buffer, bool signal = true,
-              CoroContext *ctx = nullptr);
+              CoroContext *ctx = nullptr) {
+    get_onchip().cas(gaddr, equal, val, rdma_buffer, signal, ctx);
+  }
   bool cas_dm_sync(GlobalAddress gaddr, uint64_t equal, uint64_t val,
-                   uint64_t *rdma_buffer, CoroContext *ctx = nullptr);
+                   uint64_t *rdma_buffer, CoroContext *ctx = nullptr) {
+    return get_onchip().cas_sync(gaddr, equal, val, rdma_buffer, ctx);
+  }
 
   void cas_dm_mask(GlobalAddress gaddr, uint64_t equal, uint64_t val,
                    uint64_t *rdma_buffer, uint64_t mask = ~(0ull),
-                   bool signal = true);
+                   bool signal = true) {
+    get_onchip().cas_mask(gaddr, equal, val, rdma_buffer, mask, signal);
+  }
   bool cas_dm_mask_sync(GlobalAddress gaddr, uint64_t equal, uint64_t val,
-                        uint64_t *rdma_buffer, uint64_t mask = ~(0ull));
+                        uint64_t *rdma_buffer, uint64_t mask = ~(0ull)) {
+    return get_onchip().cas_mask_sync(gaddr, equal, val, rdma_buffer, mask);
+  }
 
   void faa_dm_boundary(GlobalAddress gaddr, uint64_t add_val,
                        uint64_t *rdma_buffer, uint64_t mask = 63,
-                       bool signal = true, CoroContext *ctx = nullptr);
+                       bool signal = true, CoroContext *ctx = nullptr) {
+    get_onchip().faa_boundary(gaddr, add_val, rdma_buffer, mask, signal, ctx);
+  }
   void faa_dm_boundary_sync(GlobalAddress gaddr, uint64_t add_val,
                             uint64_t *rdma_buffer, uint64_t mask = 63,
-                            CoroContext *ctx = nullptr);
+                            CoroContext *ctx = nullptr) {
+    get_onchip().faa_boundary_sync(gaddr, add_val, rdma_buffer, mask, ctx);
+  }
 
   uint64_t poll_rdma_cq(int count = 1);
   bool poll_rdma_cq_once(uint64_t &wr_id);
