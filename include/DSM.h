@@ -84,6 +84,8 @@ public:
 
   // Returns an OnChip handle bound to the calling thread's connection.
   // Use this to perform RDMA operations on on-chip (device) memory.
+  // OnChip is a lightweight value type (two pointers). Caching it as a member
+  // is not possible because iCon is thread-local; construction cost is O(1).
   OnChip get_onchip() { return OnChip(iCon, remoteInfo); }
 
   // Convenience wrappers — delegate to get_onchip() for backward compatibility.

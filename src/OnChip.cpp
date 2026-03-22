@@ -99,7 +99,7 @@ void OnChip::cas_mask(GlobalAddress gaddr, uint64_t equal, uint64_t val,
 
 bool OnChip::cas_mask_sync(GlobalAddress gaddr, uint64_t equal, uint64_t val,
                            uint64_t *rdma_buffer, uint64_t mask) {
-  cas_mask(gaddr, equal, val, rdma_buffer, mask);
+  cas_mask(gaddr, equal, val, rdma_buffer, mask, true);
   ibv_wc wc;
   pollWithCQ(iCon->cq, 1, &wc);
   return (equal & mask) == (*rdma_buffer & mask);
